@@ -17,30 +17,31 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Unzip Project
-        run: |
-          find . -name "*.zip" -exec unzip -o {} \;
-          ls -R
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.5'
           channel: 'stable'
 
-      - name: Create Fresh Project and Copy Code
+      - name: Setup App Icon + Anime Girl Image
         run: |
-          PROJECT_DIR=$(find . -name "pubspec.yaml" -not -path "./.dart_tool/*" | head -1 | xargs dirname)
-          echo "Old project: $PROJECT_DIR"
-          flutter create -t app fresh_app
-          cp -r $PROJECT_DIR/lib/* fresh_app/lib/
-          cp -r $PROJECT_DIR/assets fresh_app/assets/ 2>/dev/null || true
-          cp $PROJECT_DIR/pubspec.yaml fresh_app/pubspec.yaml
-          ls -R fresh_app
+          echo "Checking images..."
+          ls -lh assets/
+          # App Icon lagao - saare mipmap me copy karo
+          for d in android/app/src/main/res/mipmap-*/; do
+            cp assets/app_icon.png "$d/ic_launcher.png" || true
+          done
+          # Anime Girl image confirm karo
+          cp assets/anime_girl.png assets/anime_girl.png
+          ls -lh android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+
+      - name: Add Internet Permission for Groq
+        run: |
+          grep -q "INTERNET" android/app/src/main/AndroidManifest.xml || sed -i 's|<application|<uses-permission android:name="android.permission.INTERNET" />\n    <application|' android/app/src/main/AndroidManifest.xml
+          cat android/app/src/main/AndroidManifest.xml
 
       - name: Build APK
         run: |
-          cd fresh_app
           flutter pub get
           flutter build apk --release
 
@@ -48,4 +49,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: trading-app-apk
-          path: fresh_app/build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
