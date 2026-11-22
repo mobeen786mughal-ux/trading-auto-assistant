@@ -30,11 +30,30 @@ jobs:
           cp -r $PROJECT_DIR/lib/* fresh_app/lib/
           cp -r $PROJECT_DIR/assets fresh_app/assets/
           ls -R fresh_app
-      - name: Fix pubspec
+      - name: Fix pubspec - Poora Naya Likho, Duplicate Khatam
         run: |
           cd fresh_app
-          grep -q "http:" pubspec.yaml || sed -i 's|flutter_lints.*|flutter_lints: ^3.0.0\n  http: ^1.1.0|' pubspec.yaml
-          grep -q "assets/anime" pubspec.yaml || sed -i 's|# assets:|assets:\n    - assets/anime_girl.png\n    - assets/app_icon.png|' pubspec.yaml
+          cat > pubspec.yaml << 'EOF'
+          name: fresh_app
+          description: Trading Auto Assistant - Anime Girl + Groq AI
+          publish_to: 'none'
+          version: 1.0.0+1
+          environment:
+            sdk: '>=3.0.0 <4.0.0'
+          dependencies:
+            flutter:
+              sdk: flutter
+            http: ^1.1.0
+          dev_dependencies:
+            flutter_test:
+              sdk: flutter
+            flutter_lints: ^3.0.0
+          flutter:
+            uses-material-design: true
+            assets:
+              - assets/anime_girl.png
+              - assets/app_icon.png
+          EOF
           cat pubspec.yaml
       - name: Apna Icon Lagao - Pillow Install + Convert
         run: |
@@ -42,7 +61,6 @@ jobs:
           cd fresh_app
           python3 -c "from PIL import Image; im=Image.open('assets/app_icon.png').convert('RGB'); im.save('assets/app_icon.png')"
           python3 -c "from PIL import Image; im=Image.open('assets/anime_girl.png').convert('RGB'); im.save('assets/anime_girl.png')"
-          file assets/app_icon.png
           for d in android/app/src/main/res/mipmap-*/; do cp assets/app_icon.png "$d/ic_launcher.png"; done
           echo "TERA ICON LAG GAYA BHAI"
       - name: Add Internet Permission
