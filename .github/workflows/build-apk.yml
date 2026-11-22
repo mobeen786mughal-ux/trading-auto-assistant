@@ -22,25 +22,36 @@ jobs:
         run: |
           find . -name "*.zip" -exec unzip -o {} \;
           ls -R
-      - name: Find Project + Create Fresh App
+      - name: Create Fresh App + Copy Only Code
         run: |
           PROJECT_DIR=$(find . -name "pubspec.yaml" -not -path "./.dart_tool/*" | head -1 | xargs dirname)
-          echo "Old Project: $PROJECT_DIR"
-          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
           flutter create -t app fresh_app
+          rm -rf fresh_app/lib/*
           cp -r $PROJECT_DIR/lib/* fresh_app/lib/
           cp -r $PROJECT_DIR/assets fresh_app/assets/
-          cp $PROJECT_DIR/pubspec.yaml fresh_app/pubspec.yaml
           ls -R fresh_app
-      - name: Setup App Icon + Internet Permission
+      - name: Fix pubspec
         run: |
           cd fresh_app
-          for d in android/app/src/main/res/mipmap-*/; do cp assets/app_icon.png "$d/ic_launcher.png" || true; done
+          grep -q "http:" pubspec.yaml || sed -i 's|flutter_lints.*|flutter_lints: ^3.0.0\n  http: ^1.1.0|' pubspec.yaml
+          grep -q "assets/anime" pubspec.yaml || sed -i 's|# assets:|assets:\n    - assets/anime_girl.png\n    - assets/app_icon.png|' pubspec.yaml
+          cat pubspec.yaml
+      - name: Fix Icon - JPG ko Asli PNG Banao
+        run: |
+          cd fresh_app
+          python3 -c "from PIL import Image; im=Image.open('assets/app_icon.png').convert('RGB'); im.save('assets/app_icon_fixed.png')"
+          cp assets/app_icon_fixed.png assets/app_icon.png
+          # Ab sahi PNG ko Icon banao
+          for d in android/app/src/main/res/mipmap-*/; do cp assets/app_icon.png "$d/ic_launcher.png"; done
+          echo "Icon FIX ho gaya"
+      - name: Add Internet Permission
+        run: |
+          cd fresh_app
           grep -q "INTERNET" android/app/src/main/AndroidManifest.xml || sed -i 's|<application|<uses-permission android:name="android.permission.INTERNET" />\n    <application|' android/app/src/main/AndroidManifest.xml
-          echo "Icon + Permission done"
       - name: Build APK
         run: |
           cd fresh_app
+          flutter clean
           flutter pub get
           flutter build apk --release
       - name: Upload APK
