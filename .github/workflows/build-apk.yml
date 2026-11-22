@@ -20,32 +20,31 @@ jobs:
           channel: 'stable'
       - name: Unzip Project
         run: |
-          ls -R
           find . -name "*.zip" -exec unzip -o {} \;
-          echo "--- Unzip ke baad ---"
           ls -R
-      - name: Find Project Folder
+      - name: Find Project + Create Fresh App
         run: |
           PROJECT_DIR=$(find . -name "pubspec.yaml" -not -path "./.dart_tool/*" | head -1 | xargs dirname)
+          echo "Old Project: $PROJECT_DIR"
           echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
-          echo "Project mila: $PROJECT_DIR"
-          ls -lh $PROJECT_DIR/assets/
-      - name: Setup App Icon + Anime Girl Image
+          flutter create -t app fresh_app
+          cp -r $PROJECT_DIR/lib/* fresh_app/lib/
+          cp -r $PROJECT_DIR/assets fresh_app/assets/
+          cp $PROJECT_DIR/pubspec.yaml fresh_app/pubspec.yaml
+          ls -R fresh_app
+      - name: Setup App Icon + Internet Permission
         run: |
-          cd $PROJECT_DIR
+          cd fresh_app
           for d in android/app/src/main/res/mipmap-*/; do cp assets/app_icon.png "$d/ic_launcher.png" || true; done
-          echo "Icon lag gaya"
-      - name: Add Internet Permission for Groq
-        run: |
-          cd $PROJECT_DIR
           grep -q "INTERNET" android/app/src/main/AndroidManifest.xml || sed -i 's|<application|<uses-permission android:name="android.permission.INTERNET" />\n    <application|' android/app/src/main/AndroidManifest.xml
+          echo "Icon + Permission done"
       - name: Build APK
         run: |
-          cd $PROJECT_DIR
+          cd fresh_app
           flutter pub get
           flutter build apk --release
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: trading-app-apk
-          path: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-release.apk
+          path: fresh_app/build/app/outputs/flutter-apk/app-release.apk
