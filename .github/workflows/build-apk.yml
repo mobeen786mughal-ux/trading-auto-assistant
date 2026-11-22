@@ -11,29 +11,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Unzip Project
+        run: |
+          ls -la
+          find . -name "*.zip" -exec unzip -o {} \;
+          ls -R
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.0'
           channel: 'stable'
 
-      - name: Find Project Folder
+      - name: Find Project and Build
         run: |
-          ls -R
-          if [ -f "trading-auto-assistant/pubspec.yaml" ]; then echo "PROJECT_DIR=trading-auto-assistant" >> $GITHUB_ENV; else echo "PROJECT_DIR=." >> $GITHUB_ENV; fi
-
-      - name: Get Packages
-        run: |
+          PROJECT_DIR=$(find . -name "pubspec.yaml" -not -path "./.dart_tool/*" | head -1 | xargs dirname)
+          echo "Found project at: $PROJECT_DIR"
           cd $PROJECT_DIR
           flutter pub get
-
-      - name: Build APK
-        run: |
-          cd $PROJECT_DIR
           flutter build apk --release
+          echo "APK_PATH=$PROJECT_DIR/build/app/outputs/flutter-apk/app-release.apk" >> $GITHUB_ENV
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: trading-app-apk
-          path: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-release.apk
+          path: ${{ env.APK_PATH }}
