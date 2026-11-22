@@ -18,10 +18,14 @@ jobs:
         with:
           flutter-version: '3.24.5'
           channel: 'stable'
+      - name: Unzip Project
+        run: |
+          ls -R
+          find . -name "*.zip" -exec unzip -o {} \;
+          echo "--- Unzip ke baad ---"
+          ls -R
       - name: Find Project Folder
         run: |
-          echo "--- Kahan hai project? ---"
-          ls -R
           PROJECT_DIR=$(find . -name "pubspec.yaml" -not -path "./.dart_tool/*" | head -1 | xargs dirname)
           echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
           echo "Project mila: $PROJECT_DIR"
@@ -29,9 +33,7 @@ jobs:
       - name: Setup App Icon + Anime Girl Image
         run: |
           cd $PROJECT_DIR
-          for d in android/app/src/main/res/mipmap-*/; do
-            cp assets/app_icon.png "$d/ic_launcher.png" || true
-          done
+          for d in android/app/src/main/res/mipmap-*/; do cp assets/app_icon.png "$d/ic_launcher.png" || true; done
           echo "Icon lag gaya"
       - name: Add Internet Permission for Groq
         run: |
