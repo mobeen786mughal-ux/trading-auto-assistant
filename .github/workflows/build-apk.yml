@@ -1,52 +1,49 @@
 name: Build APK
-
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.5'
           channel: 'stable'
-
+      - name: Find Project Folder
+        run: |
+          echo "--- Kahan hai project? ---"
+          ls -R
+          PROJECT_DIR=$(find . -name "pubspec.yaml" -not -path "./.dart_tool/*" | head -1 | xargs dirname)
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+          echo "Project mila: $PROJECT_DIR"
+          ls -lh $PROJECT_DIR/assets/
       - name: Setup App Icon + Anime Girl Image
         run: |
-          echo "Checking images..."
-          ls -lh assets/
-          # App Icon lagao - saare mipmap me copy karo
+          cd $PROJECT_DIR
           for d in android/app/src/main/res/mipmap-*/; do
             cp assets/app_icon.png "$d/ic_launcher.png" || true
           done
-          # Anime Girl image confirm karo
-          cp assets/anime_girl.png assets/anime_girl.png
-          ls -lh android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-
+          echo "Icon lag gaya"
       - name: Add Internet Permission for Groq
         run: |
+          cd $PROJECT_DIR
           grep -q "INTERNET" android/app/src/main/AndroidManifest.xml || sed -i 's|<application|<uses-permission android:name="android.permission.INTERNET" />\n    <application|' android/app/src/main/AndroidManifest.xml
-          cat android/app/src/main/AndroidManifest.xml
-
       - name: Build APK
         run: |
+          cd $PROJECT_DIR
           flutter pub get
           flutter build apk --release
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: trading-app-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-release.apk
