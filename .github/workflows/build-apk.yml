@@ -36,14 +36,15 @@ jobs:
           grep -q "http:" pubspec.yaml || sed -i 's|flutter_lints.*|flutter_lints: ^3.0.0\n  http: ^1.1.0|' pubspec.yaml
           grep -q "assets/anime" pubspec.yaml || sed -i 's|# assets:|assets:\n    - assets/anime_girl.png\n    - assets/app_icon.png|' pubspec.yaml
           cat pubspec.yaml
-      - name: Fix Icon - JPG ko Asli PNG Banao
+      - name: Apna Icon Lagao - Pillow Install + Convert
         run: |
+          pip install Pillow
           cd fresh_app
-          python3 -c "from PIL import Image; im=Image.open('assets/app_icon.png').convert('RGB'); im.save('assets/app_icon_fixed.png')"
-          cp assets/app_icon_fixed.png assets/app_icon.png
-          # Ab sahi PNG ko Icon banao
+          python3 -c "from PIL import Image; im=Image.open('assets/app_icon.png').convert('RGB'); im.save('assets/app_icon.png')"
+          python3 -c "from PIL import Image; im=Image.open('assets/anime_girl.png').convert('RGB'); im.save('assets/anime_girl.png')"
+          file assets/app_icon.png
           for d in android/app/src/main/res/mipmap-*/; do cp assets/app_icon.png "$d/ic_launcher.png"; done
-          echo "Icon FIX ho gaya"
+          echo "TERA ICON LAG GAYA BHAI"
       - name: Add Internet Permission
         run: |
           cd fresh_app
